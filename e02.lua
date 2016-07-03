@@ -327,7 +327,7 @@ print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 7 " .. "迭代器与泛�
 
 function values(t)
 	local i = 0
-	return function() i = i+1  return t[i] end
+	return function() i = i+1  return t[i] end  --只返回一个值
 end
 
 t = {10,20,30}
@@ -340,16 +340,55 @@ while true do
 	print(element)
 end
 
-		
+for v  in values(t) do
+	print("v: " .. v)
+end 
 
+linn = "scybzdk"
 
+print(string.sub(linn,2,5))
 
+function allwords()
+	
+	--//local file,err = io.open(name,"r")
+	--assert(file)
+	--local line = file:read("l")
+	--local line = io.read()
+	local line = "abc adk zdk "
+	local pos = 1
+	print("line 1",line)
+	return function()
+		print("line 2",line)
+		while line do
+			print("line 3",line)
+			local s,e = string.find(line,"%w+",pos)
+			print("line 4",line)
+			if s then
+				pos = e +1 
+				print("line 5",line)
+				return string.sub(line,s,e)
+			else
+				--line = file:read("l")
+				print("line rrrrrrrrr",line)
+				--line = io.read()
+				line = "daiker daiker222 daiker333"
+				line = nil
+				pos = 1
+			end
+		end
+		return nil
+	end
+end 
+for i,v in allwords() do
+	print ("i  v ",i,v)
+end 
+
+print()
 
 
 
 	
-bt = os.clock()
-print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
+
 --[==[
 	####################### chap8 编译 执行 错误 ##########################################
 --]==]
@@ -359,7 +398,27 @@ print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 8 " .. "编译 执行 错
 
 
 
+--[==[
+	####################### chap9 协同程序 ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 9 " .. "协同程序]")  --打印系统当前日期 时间
 
+
+
+
+--[==[
+	####################### chap10 实例 ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 10 " .. "实例]")  --打印系统当前日期 时间
+
+
+	
+bt = os.clock()
+print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
+--[==[
+	####################### chap11 数据结构 ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 11 " .. "数据结构]")  --打印系统当前日期 时间
 
 
 
