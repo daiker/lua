@@ -323,6 +323,30 @@ function lib3.goo(x,y) return x-y end
 --]==]
 print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 7 " .. "迭代器与泛型for]")  --打印系统当前日期 时间
 
+local t = {"daiker","554"};
+
+for k,v in pairs(t) do
+        print("k=" .. k ..",v=" .. v);
+end
+
+function dieDaiQi(t) --迭代器
+        local i = 0;
+        return function()
+          i = i+1;
+          return t[i];
+        end
+end
+
+local iter = dieDaiQi(t);
+while true do
+        local value = iter();
+        if value == nil then
+                break;
+        end
+
+        print("t=" .. value);
+end
+
 
 
 function values(t)
@@ -358,9 +382,9 @@ function allwords()
 	local pos = 1
 	print("line 1",line)
 	return function()
-		print("line 2",line)
+		--print("line 2",line)
 		while line do
-			print("line 3",line)
+			--print("line 3",line)
 			local s,e = string.find(line,"%w+",pos)
 			print("line 4",line)
 			if s then
@@ -371,7 +395,7 @@ function allwords()
 				--line = file:read("l")
 				print("line rrrrrrrrr",line)
 				--line = io.read()
-				line = "daiker daiker222 daiker333"
+				line = "daiker daiker222 "
 				line = nil
 				pos = 1
 			end
@@ -412,38 +436,184 @@ print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 9 " .. "协同程序]")  
 print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 10 " .. "实例]")  --打印系统当前日期 时间
 
 
-	
-bt = os.clock()
-print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
 --[==[
 	####################### chap11 数据结构 ##########################################
 --]==]
 print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 11 " .. "数据结构]")  --打印系统当前日期 时间
 
+a = {}
+for i=1,5 do
+	a[i] = 1   --print(a[0])  --> nil  lua中习惯用1作为起始索引
+end 
+print(#a)  --table 数组的总长度
+for i,v in pairs(a) do
+	print(i,v)
+end 
+
+--由于table是动态的实体，所以在LUA中实现链表是很方便的
+list = nil
+list = {next = list,value = "v"}
+-- 遍历此列表
+local l = list
+while l do 
+	print("list value:",l.value)
+	l = l.next
+end
 
 
+--[==[
+	####################### chap12 数据文件 ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 12 " .. "数据文件]")  --打印系统当前日期 时间
+
+local mode = {}
+function Module(b) 
+	if b.name then
+		mode[b.name] = true 
+	end
+end
+---[[ data 文件
+Module{
+	name 			= "video",
+	frame_rate 		= 25,
+	frame_type 		= "H264",
+	frame_rate 		= 2048,
+	frame_interval 	= 30,
+	frame_control 	= "vbr", -- cbr
+}
+
+Module{
+	name 			= "audio",
+	audio_type 		= "acc",
+	sampling_rate 	= 8000,	 --采样率
+	audio_channel 	= "stereo", --立体声
+}
+
+Module{
+	name 			= "gb",
+	audio_type 		= "acc",
+	sampling_rate 	= 8000,	 --采样率
+	audio_channel 	= "stereo", --立体声
+}
+
+Module{
+	name 			= "onvif",
+	audio_type 		= "acc",
+	sampling_rate 	= 8000,	 --采样率
+	audio_channel 	= "stereo", --立体声
+}
+--]]
+for name,v in pairs(mode) do print("module : " .. name,v) end
+
+--串行化
+function serialize(o)
+	if type(o) == "number" then
+		io.write(o)
+	elseif type(o) == "string" then
+		--io.write("'",o,"'")
+		--io.write("[[",o,"]]")  --避免特殊字符（引号，换行）
+		io.write(string.format("%q",o)) --避免特殊字符" ]] " 和“ [[ "
+	elseif type(o) == "table" then
+		io.write("{\n")
+		for k,v in pairs(o) do
+			io.write(" ",k, " = ")  --适合美观的配置文件
+			--io.write("  [");serialize(k);io.write("] = ")  --更加健壮，但是影响美观
+			serialize(v)
+			io.write(",\n")
+		end
+		io.write("}\n")
+	else
+		error("cannot serialize a " .. type(o))
+	end
+end 
+serialize{name="video",b='Lua',key='another one'}
+serialize{
+	name 			= "video",
+	frame_rate 		= 25,
+	frame_type 		= "H264",
+	frame_rate 		= 2048,
+	frame_interval 	= 30,
+	frame_control 	= "vbr", -- cbr
+}
+--保存带环的table 以后再回来细看，这次粗略地看一下，没看懂
+
+--[==[
+	####################### chap13 元表与方法 ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 13 " .. "元表与方法]")  --打印系统当前日期 时间
+
+--任何table都可以作为任何值的元表
+--在Lua代码中，只能设置table的元表，若要设置其他类型的值的元表，则必须用C代码来完成
+--标准的字符串程序库为所有的字符串都设置了一个元表
+print(getmetatable("hi"))  -- 打印 table: 0x8c4f1a0
+
+Set = {}		--这个table用来保存函数
+local mt = {}  --这个是集合的元表
+
+function Set.new(l)
+	local set = {}
+	setmetatable(set,mt)    --第二版
+	for _, v in ipairs(l) do 
+		set[v] = true
+	end
+	return set 
+end 
+
+function Set.union(a,b)
+	if getmetatable(a) ~= mt or getmetatable(b) ~= mt then
+		error("attempt to 'add' a set with a non-set value",2)
+	end
+	local res = Set.new{}
+	for k in pairs(a) do res[k] = true end
+	for k in pairs(b) do res[k] = true end
+	return res
+end 
+
+function Set.intersection(a,b)
+	local res = Set.new{}
+	for k in pairs(a) do
+		res[k] = b[k]
+	end
+	return res
+end
+
+function Set.tostring(set)
+	local l = {}
+	for e in pairs(set) do
+		l[#l + 1] = e 
+	end
+	return "{" .. table.concat(l,", ") .. "}"
+end
 
 
+function Set.print(s)
+	print(Set.tostring(s))
+end 
 
+s1 = Set.new{10,20,30,50}
+s2 = Set.new{30,1}
+print(getmetatable(s1))
+print(getmetatable(s2))
 
+mt.__add = Set.union
 
+s3 = s1 + s2
+Set.print(s3)  -- > {1,20,30,10,50}
 
+mt.__mul = Set.intersection
+Set.print((s1+s2) * s1)  -- >{20,50,30,10}
+-- 除了__mul , __add，每种算术操作符都有对应的字段名
+--例如：__sub（减法）,__div,__unm（相反数）,__mod（取模）,__pow(取幂)
 
+s = Set.new{1,2,3}
+--s = s + 8
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+bt = os.clock()
+print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
+--[==[
+	####################### chap14 环境 ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 14 " .. "环境]")  --打印系统当前日期 时间
 
 
 
