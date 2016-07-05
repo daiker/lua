@@ -368,7 +368,7 @@ for v  in values(t) do
 	print("v: " .. v)
 end 
 
-linn = "scybzdk"
+local linn = "scybzdk"
 
 print(string.sub(linn,2,5))
 
@@ -606,14 +606,153 @@ Set.print((s1+s2) * s1)  -- >{20,50,30,10}
 --例如：__sub（减法）,__div,__unm（相反数）,__mod（取模）,__pow(取幂)
 
 s = Set.new{1,2,3}
---s = s + 8
+--s = s + 8  --8 没有元表，会报错
 
-bt = os.clock()
-print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
+
+--元表可以指定关系操作符的含义，元方法为__eq（等于）__lt（小于） __le（小于等于）。
+--其他大于等于都将转换为上诉三种方法 a > b --> b<a 
+
+mt.__le = function(a,b)
+	for k in pairs(a) do
+		if not b[k] then 
+			return false
+		end
+	end
+	return true
+end 
+
+mt.__lt = function(a,b)
+	return a <= b and not (b <= a)
+end 
+
+mt.__eq = function(a,b)
+	return a <= b and b <= a
+end 
+
+s1 = Set.new{2,4}
+s2 = Set.new{4,10,2}
+print("s1 : s2")
+Set.print(s1)
+Set.print(s2)
+print("s1 <= s2 :",s1 <= s2)
+print("s1 < s2 :",s1 < s2)
+print("s1 > s2 :",s1 > s2)
+print("s1 >= s2 :",s1 >= s2)
+print("s1 == s2 * s1:",s1 == s2 * s1)  -- 相乘是找交集
+print("s2 == s2 * s1:",s2 == s2 * s1)
+
+print({})  -- print 总是调用tostring来格式化其输出，会检查该值是否有一个__tostring的元方法。有则调用
+mt.__tostring = Set.tostring  --设置元表中的tostring字段，此后调用print就会调用Set.tostring 直接打印
+print("s1 : s2")
+print(s1)
+print(s2)
+
+--为了保护元表，使用户不能修改集合的元表，只需要设置该字段
+mt.__metatable = "Not your business,can't change a protected metatable"
+print(getmetatable(s1))
+--setmetatable(s1,{})这里不能调用该设置函数，会打印cannot change a protected metatable
+
+--table访问的元方法，有两种可以改变的table行为：查询table及修改table中不存在的字段
+--__index 元方法 ，一个有关继承的典型示例，__index元方法用于继承是很普通的方法
+Window = {}
+Window.prototype = {x=0,y=0,width=100,height=200}
+Window.mt = {}
+function Window.new(o)
+	setmetatable(o,Window.mt)
+	return o
+end 
+
+--定义__index元方法 ，__index元方法不必一定是一个函数，可以是一个table
+--当是一个函数时，Lua以table和不存在的key为参数
+--当它是一个table时，Lua就以相同的方式来重新访问这个table
+Window.mt.__index = function(table,key)
+	return Window.prototype[key]
+end 
+
+w = Window.new{x = 10,y = 20}
+print(w.width)  --查询它没有的字段，结果是100
+
+--当__index是一个table时，Lua就以相同的方式来重新访问这个table
+--Window.mt__index = Window.prototype  --没有搞懂，为啥打印是nil呢？？？，以后再回来看吧
+y = Window.new{x = 10,y = 20}
+print(y.height)  --查询它没有的字段，结果是100
+
+
+--__newindex元方法与__index类似，前者用于table的更新，后者用于table的查询
+--当对一个table中不存在的索引赋值时，就会查找__newindex元方法。
+--具有默认值的table
+function setDefault(t,d)
+	local mt = {__index = function () return d end}  --快速定义一个元方法
+	setmetatable(t,mt) --设置元表
+end 
+tab = {x=10,y=20}
+print(tab.x,tab.z)
+setDefault(tab,5)  --对任何对tab中存在字段的访问都将调用它的__index元方法。
+print(tab.x,tab.z,tab.xxxx)  -- --> 10 5 5
+
+--跟踪table的访问，可以用__index和_newindex
+t = {} --原来的table(在其他地方创建的)
+local _t = t --保持对原table的一个私有访问
+
+--创建代理
+t = {}
+
+--创建元表
+local mt = {
+	__index = function(t,k)		--
+		print("*access to element " .. tostring(k))
+		return _t[k] --访问原来的table
+	end,
+	__newindex = function(t,k,v)  --对一个不存在的索引值赋值时，会找这个元方法
+		print("*update of element " .. tostring(k) .. " to " .. tostring(v))
+		_t[k] = v --更新原来的table
+	end
+	
+}
+setmetatable(t,mt)
+
+
+t[2] = "hello"   -- 调用 __newindex
+print(t[2])		-- 调用 __index
+
+--只读的table
+function readOnly(t)
+	local proxy = {}
+	local mt = {
+		__index = t,
+		__newindex = function(t,k,v)
+			error("attempt to update a read-only table",2)
+		end
+	}
+	setmetatable(proxy,mt)
+	return proxy
+end 
+
+days = readOnly{"Sunday","monday","Tuesday","Wednesday",
+				"Tuesday","Friday","Saturday"}
+print(days[1])
+--days[2] = "Noday"  --这样去访问会导致error抛出错误,这个可以用于以后的系统配置文件，不让客户去修改 gooooooood ^_^
+
+
+--跟踪table，__index和__newindex都是在table中没有所需访问的index时才发挥作用
+--因此，只有将一个table保持为空，才能捕捉到所有对它的访问
+--其次要为真正的table创建一个代理，并且为空 ， ------重定向到原来的table
+
+
+
+
+
+
+
 --[==[
 	####################### chap14 环境 ##########################################
 --]==]
 print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 14 " .. "环境]")  --打印系统当前日期 时间
+--Lua将其所有的全局变量保存在一个常规的table中，这个table为“环境”
+
+for n in pairs(_G) do
+	print(n)
+end
 
 
 
@@ -623,25 +762,11 @@ print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 14 " .. "环境]")  --打
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+bt = os.clock()
+print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
+--[==[
+	####################### chap15 模块与包 ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 15 " .. "模块与包]")  --打印系统当前日期 时间
 
 
