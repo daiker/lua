@@ -1,4 +1,5 @@
 #! /home/scybzdk/git/skynet/3rd/lua/lua
+
 --[[
 	################# chap1 开始 ###################################################
 --]]
@@ -298,7 +299,7 @@ local file,err = io.open("ip.info","r")
 if file == nil then
 	print(err)
 else
-	print(file:read("a"))
+	print(file:read("*a"))  --为了兼容Lua5.1才加上“*”
 	file:close()
 end	
 	
@@ -751,7 +752,58 @@ print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 14 " .. "环境]")  --打
 --Lua将其所有的全局变量保存在一个常规的table中，这个table为“环境”
 
 for n in pairs(_G) do
-	print(n)
+	--print(n)  打印所有的全局变量
+end
+
+setmetatable(_G,{
+	__newindex = function(t,n,v)
+		--error("[Waring]::::::attempt to write to undeclared variable " .. n,2)
+		--print("[Waring]::::::attempt to write to undeclared variable V1")
+		--print("[Waring]::::::attempt to write to undeclared variable V2")
+		local w = debug.getinfo(2,"S").what
+		print("write what : ",w)
+		if w ~= "main" and w ~= "C" then   --主函数就绕过error
+			error("attempt to write to undeclared variable " .. n,2)
+		end 
+		rawset(t,n,v)
+	end,
+	__index  = function(_,n)
+		local w = debug.getinfo(2,"S").what
+		print("read  what : ",w)
+		if w ~= "main" and w ~= "C" then   --主函数就绕过error
+			error("attempt to read undeclared variable " .. n,2)
+		end
+		--print("[Waring]::::::attempt to read undeclared variable ")
+	end,
+})
+m = 0		--打印警告,调用__newindex元方法
+print(n)  --打印警告,调用__index元方法
+
+
+-- 通过rawset 可以绕过元表，这里没有测试通过，还不知道什么原因，总是会去调用__newindex,以后再回来看吧
+--function declare(name,initval)
+	--rawset(_G,name,initval or false)
+--end 
+
+--非全局的环境，可以通过函数setfenv来改变一个函数的环境，参数可以是函数和一个新的环境table
+--如果第一个参数为数字1，就表示当前函数，为2就表示调用当前函数的函数
+
+if _VERSION == "Lua 5.1" then
+	a = 10
+	--setfenv(1,{g = _G})  -- 调用此函数后导致下面的函数调用都找不到定义了，这个函数只在Lua5.1里才有，5.2版本以后都删除掉了
+	print(a)
+
+	
+	--[==[
+		####################### chap15 模块与包 ##########################################
+	--]==]
+	print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 15 " .. "模块与包]")  --打印系统当前日期 时间
+else 
+	
+	--[==[
+		####################### chap15 模块与包 ##########################################
+	--]==]
+	print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 15 " .. "模块与包]")  --打印系统当前日期 时间
 end
 
 
@@ -759,14 +811,9 @@ end
 
 
 
-
-
-
-bt = os.clock()
-print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
---[==[
-	####################### chap15 模块与包 ##########################################
---]==]
-print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 15 " .. "模块与包]")  --打印系统当前日期 时间
-
-
+local bt = os.clock()
+	print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
+	--[==[
+		####################### chap16 面向对象 ##########################################
+	--]==]
+	print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 16 " .. "面向对象]")  --打印系统当前日期 时间
