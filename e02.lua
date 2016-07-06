@@ -807,13 +807,69 @@ else
 end
 
 
+--以下这两个变量用于存放环境变量
+print(package.path)  --根据Lua版本不同，找的路径不同
+print(package.cpath)  --根据Lua版本不同，找的路径不同
+
+--local m = require "math"
+print(math.sin(3.14))
+local M = {}
+setmetatable(M,{__index = _G})
+_ENV = M
+function add(c1,c2)
+	return new(c1.r + c2.r,c1.i + c2.i)
+end
+
+--_ENV = nil -- or _EVN = M  环境还没有搞懂什么原理，以后再回来
+--Lua5.1 可以用这个_ENV,Lua5.3要在下面报错，没搞懂
+
+
+--[==[
+	####################### chap16 面向对象 ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 16 " .. "面向对象]")  --打印系统当前日期 时间
+
+Account = {balance = 0}
+function Account.withdraw(v)
+	Account.balance = Account.balance -v 
+end 
+	
+function Account.withdraw(self,v)
+	self.balance = self.balance - v
+end 
+
+al = Account;Account = nil
+al.withdraw( al ,100)
+
+
+
 
 
 
 
 local bt = os.clock()
-	print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
-	--[==[
-		####################### chap16 面向对象 ##########################################
-	--]==]
-	print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 16 " .. "面向对象]")  --打印系统当前日期 时间
+print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
+--[==[
+	####################### chap17 弱引用table] ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 17 " .. "弱引用table]")  --打印系统当前日期 时间
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
