@@ -829,17 +829,186 @@ end
 --]==]
 print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 16 " .. "面向对象]")  --打印系统当前日期 时间
 
-Account = {balance = 0}
-function Account.withdraw(v)
-	Account.balance = Account.balance -v 
-end 
-	
-function Account.withdraw(self,v)
-	self.balance = self.balance - v
+Account = {balance = 500}
+function Account:withdraw(v)
+	if v > self.balance then 
+		error "insufficient funds"
+	end 
+	self.balance = self.balance -v  --也可以用冒号去定义一个方法
 end 
 
-al = Account;Account = nil
-al.withdraw( al ,100)
+function Account:deposit(v)
+	self.balance = self.balance + v
+end 
+
+function Account:new(o)	--创建一个新账户
+	o = o or {} --如果用户没有提供table，就创建一个
+	setmetatable(o,self)
+	self.__index = self
+	return o
+end
+
+al = Account--;Account = nil
+al.withdraw( al ,100) -- 必须指定其作用的对象 500 - 100
+al:withdraw(100) --冒号是在一个方法定义中添加一个额外的隐藏参数 400 - 100
+					--方法调用中添加一个额外的实参
+-- 接下来依次创建 类，继承 ，私密性
+-- 类就像是一个创建对象的模具
+a = {}
+b = {}
+--setmetatable(a,{__index = b})  --让b作为a的一个原型
+								--a 就会在b中查找所有它没有的操作 “可以称b是对象a的类”
+a = Account:new{balance = 0}
+a:deposit(1100.00)
+b = Account:new()
+print(b.balance)  -->300
+b:deposit(100)
+print(b.balance)  --> 400
+
+--继承 
+SpecialAccount = Account:new()
+s = SpecialAccount:new{limit = 1000}
+print(s.balance)  -->上面al.withdraw 减了200 ，所有结果为300
+s:deposit(50)
+print(s.balance)  -->350
+
+--当然，也可以重新定义一个新方法withdraw
+function SpecialAccount:withdraw(v)
+	if v - self.balance >= self:getLimit() then
+		error ("insufficient funds : draw: " .. v .. " - " .. self.balance)
+	end
+	self.balance = self.balance - v 
+end 
+
+function SpecialAccount:getLimit()
+	return self.limit or 0
+end 
+print("s begin draw.......")
+ s:withdraw(100)
+print(s.balance)  -->250
+function s:getLimit()
+	return self.balance * 0.10
+end 
+s:withdraw(100) 
+print(s.balance) -->150
+s:withdraw(100)
+print(s.balance) -->50
+
+--多重继承
+--用一个函数作为__index元字段
+
+--私密性
+function newAccount(initialBalance)
+	local self = {balance = initialBalance, --用于保存对象的内部状态
+				LIM = 10000.00,				--这些状态以后就只能通过内部的函数来访问
+				}
+	local extra = function()		--任何用户都无法直接访问extra函数
+		if self.balance > self.LIM then
+			return self.balance * 0.10
+		else
+			return 0 
+		end 
+	end 
+	local  getBalance = function()
+		return self.balance + extra()
+	end 
+	
+	
+	local withdraw = function(v)
+		self.balance = self.balance -v 
+	end 
+	local deposit = function(v)
+		self.balance = self.balance + v 
+	end 
+
+	return{
+		withdraw =withdraw, --将方法名与真正的方法实现匹配起来
+		deposit = deposit,
+		getBalance = getBalance
+	}
+end 
+
+acc = newAccount(11000.00)
+acc.withdraw(100)
+print(acc.getBalance())
+
+--单一方法做法
+--当一个对象只有一个方法时，可以不用创建接口table，
+--但是要将这个单独的方法作为对象来返回
+--一个具有状态的迭代器就是一个单一方法对象
+
+function newObjuct (value)
+	return function(action,v)
+		if action == "get" then
+			return value 
+		elseif action == "set" then 
+			value = v 
+		else 
+			error("invalid action")
+		end 
+	end 
+end 
+d = newObjuct(5)
+print(d("get"))
+d("set",10)
+print(d("get"))
+
+
+--[==[
+	####################### chap17 弱引用table] ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 17 " .. "弱引用table]")
+--弱引用，一种会被垃圾收集器忽视的对象引用
+--如果一个对象只被一个弱引用table所持有，那么最终Lua会回收这个对象
+--三种弱引用table：具有弱引用key的table、具有弱引用value的table、同时具有两种弱引用table
+--只要有一个key或value被回收了，它们所在的整个条目都会从table中删除
+--一个table的弱引用类型是通过元表中的__mode字段来决定的
+--__mode 中包含字母'k',那么这个table的key是弱引用
+--__mode 中包含字母'v',那么这个table的value是弱引用,__mode = "kv" 表示key和value都是弱引用
+a = {}
+b = {__mode = "k"}
+setmetatable(a,b)  --此时a有一个weak keys
+key = {}		  --创建第一个key
+a[key] = 1
+key = {}			--创建第二个key
+a[key] = 2
+--collectgarbage()	--强力回收
+for k,v in pairs(a) do
+	print(v)
+end	
+
+collectgarbage()	--forces a garbage collection cycle
+for k,v in pairs(a) do
+	print(v)
+end
+
+
+--备忘录函数，优化节省时间，再加上弱引用table就完美了
+local results = {}
+
+
+setmetatable(results,{__mode = "v"}) --使key和value成为弱引用
+
+function mem_loadstring(s)
+	local res = results[s]
+	if res == nil then			--是否记录过
+		res = assert(loadstring(s))--计算新结果
+		results[s] = res 		--保存备份，以备用
+	end 
+	return res
+end
+
+function createRGB(r,g,b)
+	local key = r .. "-" .. g .. "-" .. b
+	local color = results[key]
+	if color == nil then 
+		color = {red = r,green = g,blue = b}
+		results[key] = color
+	end
+	return color
+end 
+
+--对象属性
 
 
 
@@ -850,26 +1019,22 @@ al.withdraw( al ,100)
 local bt = os.clock()
 print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
 --[==[
-	####################### chap17 弱引用table] ##########################################
+	####################### chap18 数学库] ##########################################
 --]==]
-print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 17 " .. "弱引用table]")  --打印系统当前日期 时间
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 18 " .. "数学库]") 
+
+
+
+
+
+
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+--[==[
+	####################### chap19 table库] ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 19 " .. "table库]") 
+
+
+
+
