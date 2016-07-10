@@ -1011,6 +1011,195 @@ end
 --对象属性
 
 
+--[==[
+	####################### chap18 数学库] ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 18 " .. "数学库]") 
+
+print(math.random(100))
+print("----->")
+math.randomseed(os.time())  --设置伪随机数生成器的种子数
+print(math.random(100))
+print()
+
+--以下是Lua程序设计第三版中的内容
+--位操作
+function printx(x)
+	print(string.format("0x%x",x))
+end 
+--按位操作中的操作符“band”,"bor","bnot" 在Lua5.2中废弃了bit32库,5.3中直接使用操作符
+print(_VERSION)
+if _VERSION == "Lua 5.1" then
+	
+	print(10/3)		-->3.3333333333333
+else
+print("以下异或操作被屏蔽")
+--[[  以下只能 Lua 5.3 能用
+	printx(2&3)	-->与 2
+	printx(4|1)	-->或 5
+	printx(2~1)	-->二元，异或	3
+	printx(~1)	-->一元，按位非0xfffffffffffffffe
+	printx(2^3)		-->2的3次方  8
+	printx(10%3)	--取模
+	printx(10//3)	--取整除   3
+--]]
+end
+--以上是Lua程序设计第三版中的内容，但是在5.3中才能使用
+
+--[==[
+	####################### chap19 table库] ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 19 " .. "table库]") 
+
+t= {10,20,30}
+table.insert(t,1,5)  --如果没有指定位置参数，则添加到末尾，等价于压入
+for k,v in ipairs(t) do
+	print(k,v)
+end
+
+table.remove(t,3 )--如果没有指定位置参数，则删除末尾最后一个，等价于弹出
+for k,v in ipairs(t) do
+	print(k,v)
+end
+
+--排序，必须针对数组才行
+ines = {
+	luaH_set = 10,
+	luaH_get = 24,
+	luaH_abc = 55,
+	luaH_present = 48,
+}
+local a = {}
+for n in pairs(ines) do
+	print(n)		--这里打印是无序的
+	a[#a + 1] = n 
+end 
+print('------after sort-----')
+table.sort(a)
+for i,n in ipairs(a) do 
+	print(n)		--这里打印是按序的
+end 
+print('------end sort-----')
+
+
+
+--连接，针对字符串数组
+function rconcat(l)
+	if type(l) ~= "table" then 
+		return l 
+	end 
+	local res = {}
+	for i=1,#l do
+		res[i] = rconcat(l[i]) --递归调用，连接所有可能嵌套的字符串数组
+	end 
+	return  table.concat(res)
+end 	
+print(rconcat{{"a",{" nice"}}," and",{{" long"},{" list"}}})
+
+--[==[
+	####################### chap20 字符串库] ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 20 " .. "字符串库]") 
+
+--lua中真正的字符串操作能力来源于字符串库,字符串索引-1表示最后一个字符
+s = "[in brackets]"
+print(string.sub(s,2,-2)) --sub不会改变字符串的值，只会返回一个新字符串
+
+print(string.char(97))			--打印 a 
+i=99				
+print(string.char(i,i+1,i+2))	--cde
+print(string.byte("abc"))		--97 打印第一个数值
+print(string.byte("abc",2))		--98
+print(string.byte("abc",-1)) 	--99
+print(string.byte("abc",1,2))	--97	98
+
+print(string.format("pi = %.4f",math.pi))
+
+--最强大的函数、find、match、gsub(global substitution,全局替换)和gmatch(全局匹配)
+s = "hello world"
+i,j = string.find(s,"hello")  --它可以接受第三个参数，表示下次查找的开始位置
+print(i,j)
+print(string.sub(s,i,j))
+
+--gmatch返回的不是j,j的位置，而是返回字符子串
+print(string.match(s,"llo"))
+
+local dat = "Today is 10/7/2016"
+d = string.match(dat,"%d+/%d+/%d+")   --模式匹查找
+print(d)
+--查找并替换，还有第四个参数，可以限制替换次数
+s = string.gsub("Lua is cute","cute","great")
+print(s)
+s = string.gsub("all lii","l","x")
+print(s)
+s = string.gsub("Lua is great","Sol","Sun")
+print(s)
+print("------------replace limit---l-->x ------")
+s = string.gsub("all lii","l","x",1)
+print(s)
+s = string.gsub("all lii","l","x",2)
+print(s)
+str = "hello world this is Lua language learn"--gsub有一个额外的功能，是统计替换的次数
+count = select(2,string.gsub(str," "," ")) --select返回从第二个参数开始的参数
+print(count)
+
+s = "hello 12 wo.rld fr.om lua 123"
+for w in string.gmatch(s,"%a+") do   --%a+是匹配一个或多个字母
+	print(w)
+end 
+
+s =  string.gsub(s,"%.","/")    --%a+是匹配一个或多个字母
+	print(s)
+
+
+
+
+--一个用gmatch 和gsub模拟require在寻找模块
+function search(modname,path)
+	modname =  string.sub(modname,"%.","/")--用'/'替换所有的'.'，这里要加'%'，应为点有特殊含义
+	for c in sting.gmatch(path,"[^;]+") do  --遍历不包括分号的子串，[]表示字符集
+		local fname = string.gsub(c,"?",modname) --用模块名替换问号，但是这里的名字不是包含'/'吗？没搞懂
+		local f = io.open(fname)
+		if f then 
+			f:close()
+			return fname
+		end 
+	end 
+	return nil -- 没找到
+end 
+
+
+--模式
+print(string.gsub("hello, up-down!","%A",".")) --大写A表示所有匹配符的补集
+
+--魔法字符 () . % + - * ? [ ] ^ $ 
+--用‘%’来转义这些魔法字符
+--^作为模式的起始，则只会匹配目标字符串的开头部分，
+--‘$’结尾，则只会匹配目标字符串的结尾部分
+-----“^[+-]?%d+$”表示字符串是否表示一个整数，并且没有多余的前导字符和结尾字符
+--%b可以表示匹配成对的字符，%b()表示以‘(’开始，以 ')'结束的字串,典型用于%b[],%b{},%b<>
+s = "a (enclosed (in) parentheses) line"
+print(string.gsub(s,"%b()",""))
+--在字符集中表示一段字符范围的方法是如[1-9]，[a-f]
+-- + 表示重复1次或多次
+-- * 表示重复0次或多次，尽可能多
+-- - 表示重复0次或多次, 尽可能少
+-- ？可选部分(0次或1次) ，[+-]?%d+ 就可以表示正负数了
+print(string.gsub("one ,and two; and three","%a+","word"))
+print(string.match("the number 1298 is even","%d+"))
+
+--捕获
+ pair = "name = Anna"
+ key,value = string.match(pair,"(%a+)%s*=%s*(%a+)")
+ --"%a+"表示一个非空的字母序列，“%s*”表示一个可能为空的空格序列
+ print(key,value)
+
+date = "Today is 10/7/2016"
+d,m,y =  string.match(date,"(%d+)/(%d+)/(%d+)")
+print(y,m,d)
+
+
+
 
 
 
@@ -1019,22 +1208,9 @@ end
 local bt = os.clock()
 print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
 --[==[
-	####################### chap18 数学库] ##########################################
+	####################### chap21 IO库] ##########################################
 --]==]
-print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 18 " .. "数学库]") 
-
-
-
-
-
-
-	
-
---[==[
-	####################### chap19 table库] ##########################################
---]==]
-print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 19 " .. "table库]") 
-
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 21 " .. "IO库]") 
 
 
 
