@@ -1199,6 +1199,57 @@ d,m,y =  string.match(date,"(%d+)/(%d+)/(%d+)")
 print(y,m,d)
 
 
+--tab扩展
+--像“()”这样的空白不是代表捕获空内容，而是捕获它在目标字符串中的位置
+print(string.match("hello","()ll()"))  -->3  5 
+
+
+
+--[==[
+	####################### chap21 IO库] ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 21 " .. "IO库]") 
+
+--通过 不指定参数调用io.input()可以得到当前输入文件的句柄，而通过io.input(handle)
+--可以设置当前输入文件的句柄
+local temp = io.input()  --临时保存当前文件
+io.input("ip.info")
+print("do something")
+io.input():close()
+io.input(temp)
+
+--一次性读取整个文件要比逐行读取要块一些，对于大文件，最快的方法是用足够大的块
+--比如8K大小的块读取文件。
+
+local BUFSIZE=2^13  --8k
+local f = io.input("ip.info") --打开输入文件
+local cc ,lc,wc = 0,0,0
+while true do
+	local lines,rest = f:read(BUFSIZE,"*line")
+	if not lines then break end 
+	if rest then lines = lines .. rest .. "\n" end 
+	cc = cc + #lines
+	local _,t = string.gsub(lines,"%S+","")
+	wc = wc + t
+	_,t = string.gsub(line,"\n","\n")
+	lc = lc + t 
+end 
+print(lc,wc,cc)
+
+--打印二进制内容
+local f = assert(io.open("luac.out","rb"))
+local block = 16 
+while true do 
+	local bytes = f:read(block)
+	if not bytes then break end 
+	for _,b in ipairs {string.byte(bytes,1,-1)} do 
+		io.write(string.format("%02X ",b))  --打印16个字节长的二进制数据
+	end 
+	io.write(string.rep(" ",block - string.len(bytes)))
+	io.write(" ",string.gsub(bytes,"%c","."),"\n")
+
+end 
+
 
 
 
@@ -1208,9 +1259,43 @@ print(y,m,d)
 local bt = os.clock()
 print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
 --[==[
-	####################### chap21 IO库] ##########################################
+	####################### chap22 操作系统库] ##########################################
 --]==]
-print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 21 " .. "IO库]") 
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 22 " .. "操作系统库]") 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
