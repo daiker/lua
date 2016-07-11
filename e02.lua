@@ -1243,12 +1243,39 @@ while true do
 	local bytes = f:read(block)
 	if not bytes then break end 
 	for _,b in ipairs {string.byte(bytes,1,-1)} do 
-		io.write(string.format("%02X ",b))  --打印16个字节长的二进制数据
+		--io.write(string.format("%02X ",b))  --打印16个字节长的二进制数据
 	end 
-	io.write(string.rep(" ",block - string.len(bytes)))
-	io.write(" ",string.gsub(bytes,"%c","."),"\n")
+	--io.write(string.rep(" ",block - string.len(bytes)))
+	--io.write(" ",string.gsub(bytes,"%c","."),"\n")
 
 end 
+
+
+
+
+--[==[
+	####################### chap22 操作系统库] ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 22 " .. "操作系统库]") 
+--Lua中，data和time提供了所有的日期和时间的功能
+print(os.time{year=1970,month=1,day=1,hour=9})
+print(os.date("%Y-%m-%d %X"))
+
+--函数os.getenv可以获取一个环境变量的值
+print("HOME: " .. os.getenv("HOME"))
+function showdir()
+	os.execute("ls")  --类似于C语言中的system函数
+end 
+showdir()
+
+local bt = os.clock()
+print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
+--[==[
+	####################### chap23 调试库] ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 23 " .. "调试库]")
+
+
 
 
 
@@ -1259,20 +1286,9 @@ end
 local bt = os.clock()
 print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
 --[==[
-	####################### chap22 操作系统库] ##########################################
+	####################### chap24 C API] ##########################################
 --]==]
-print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 22 " .. "操作系统库]") 
-
-
-
-
-
-
-
-
-
-
-
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 24 " .. "C API]")
 
 
 
