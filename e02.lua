@@ -1274,6 +1274,144 @@ print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
 	####################### chap23 调试库] ##########################################
 --]==]
 print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 23 " .. "调试库]")
+--调试库中的自省函数是debug.getinfo(foo),返回一个table
+--table中包含一些与该函数相关的信息
+--当foo是函数时，table只有what,name和namewhat有意义
+--当foo是一个数字时，可以得到相应栈层上函数的数据
+--getinfo有第二个可选参数,是一个字符串 如下:
+--'n':选择name和namewhat
+--'f':func
+--'S':sourec , short_src , what ,linedefined和lastlinedefined
+--'l':currentline
+--'L':activelines
+--'u':nups   number of upvalues
+function traceback()
+	for level = 1,math.huge do
+		local info = debug.getinfo(level,"Sl")
+		if not info then break end 
+		if info.what == "C" then --是一个C函数吗
+			print(level,"C function")
+		else 						--a Lua functin
+			print(string.format("[%s]:%d",info.short_src,info.currentline))--打印文件名和哪一行调用
+		end 
+	end 
+end 
+
+--访问局部变量，可以用debug.getlocal 来检查任意活动函数的局部变量
+--Lua按局部变量在一个函数中的出现顺序为它们编号，只限于在函数当前作用域中的变量
+ function foo(a,b)
+	local x
+	do local c = a - b end 
+	local a = 1 
+	while true do 							--1,2,3,4  --> a,b,x,a
+		local name ,value = debug.getlocal(1,a) --这里的变量name ,value对于getlocal函数还不可见，所有不会打印
+		if not name then break end 
+		print(name ,value)
+		a  = a + 1 
+	end 
+ end 
+ 
+ foo(10,20)
+--可以通过debug.setlocal改变局部变量的值，它的前两个参数与getlocal一样
+--是栈层和变量索引，第三个参数是变量的新值
+
+--访问非局部的变量getupvalue，第一个参数不是栈层而是一个函数，一个closure
+--第二个参数是变量索引
+function getvarvalue(name)
+	local value="d"
+	local found 
+	--尝试局部变量
+	for i = 1,math.huge do 
+		local n,v = debug.getlocal(2,i) --这里的2 是上一层栈层，1就是当前栈层
+		if not n then break end
+		--print(name,n,v)
+		if n == name then 
+			value = v
+			found = true
+		end 
+	end
+	print(11111)
+	if found then print(value) return value end
+	print(22222)
+	--尝试访问 非局部变量
+	local func =  debug.getinfo(2,"f").func
+	for i = 1,math.huge do
+		local n,v = debug.getupvalue(func,i)
+		if not n then break end 
+		if n == name then return v end
+	end 
+	return nil
+	--return _ENV[name]
+end 
+
+
+print(type(getvarvalue("hhh")))
+print(type(getvarvalue("iter")))
+
+--钩子函数，debug.sethook(print,"crl") 
+--c:监控call事件，r:监控return事件，l:监控line事件
+function track(event,line)
+	local s = debug.getinfo(2).short_src
+	print("[" .. s .. "]" .. "@" .. line)
+end
+
+debug.sethook(track,"l")  --c r 还没有测试通过
+print("track 00")
+--getvarvalue("a")
+print("track 11")
+
+debug.sethook()  --关闭钩子调试
+
+print("track 22")
+print("track 33")
+
+--[==[
+	####################### chap24 C API] ##########################################
+--]==]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 24 " .. "C API]")
+
+--头文件lua.h定义了Lua提供的基础函数，包括创建Lua环境，调用Lua函数(lua_pcall),以及注册供Lua调用的新函数等，以lua_开头
+--基础API保持设计的原子性和正交性，而辅助库则侧重解决具体的任务
+--lauxlib.h定义了辅助库，以luaL_开头，如luaL_loadbuffer，luaL_openlibs则可以打开所有的标准库
+
+--栈
+--Lua严格按照LIFO规范去操作这个栈
+--压入元素
+--对于每种可以呈现在Lua中的C类型，API都有一个对应的压入函数
+--nil 	用lua_pushnil 压入空值
+--浮点  用lua_pushnumber,把一个浮点数压栈
+--整数	用lua_pushinteger,把一个整数压栈
+--布尔	用lua_pushboolean,把一个布尔值压栈
+--任意字符串	用lua_pushlstring(L,s,len) ,Lua会对s做一个副本
+--0结尾的字符串	用lua_pushstring(L,s),Lua会对s做一个副本
+--检查栈空间是否够用，用lua_checkstack(L,sz)
+
+--查询元素
+--API使用“索引”来引用栈中的元素，第一个压入栈中的元素为1；第二个为2，直到栈顶。。。
+--可以以栈顶为参考物，用负数索引访问栈中的元素，-1表示栈顶(最后压入的元素)，-2表示栈顶下面的元素，以此类推...
+--例如lua_tostring(L,-1)会将栈顶的值作为一个字符串返回，正数索引则是从栈底开始
+
+--从栈中获取一个值
+--int  lua_toboolean(L,index)
+--lua_Number	lua_tonumber(L,index)
+--lua_Integer	lua_tointeger(L,index)
+--const char*字符串库		lua_tolstring(L,index,len)  --规则：不要在c函数之外使用在C函数内获取的指向Lua字符串的指针
+--字符串末尾会额外有一个零，真正的长度由len表示
+--size_t		lua_objlen(L,index)
+
+--lua_pushvalue	将指定索引上的值 copy一个副本再压入栈
+--lua_remove 	删除指定索引上的元素，并移动上面的栈填补改空缺
+--lua_insert	会上移指定位置上面所有的元素，再将栈顶元素移动到改位置
+--lua_replace	弹出栈顶的值，并将改值设置到指定索引，但它不会移动任何东西，只替换
+
+--应用程序中的错误处理
+--用户可以通过lua_atpanic来设置自己的紧急函数
+
+
+
+
+
+
 
 
 
@@ -1286,27 +1424,9 @@ print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 23 " .. "调试库]")
 local bt = os.clock()
 print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
 --[==[
-	####################### chap24 C API] ##########################################
+	####################### chap25 扩展应用程序] ##########################################
 --]==]
-print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 24 " .. "C API]")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 25 " .. "扩展应用程序]")
 
 
 
