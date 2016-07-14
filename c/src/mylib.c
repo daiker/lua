@@ -114,31 +114,67 @@ luaopen_httppack(lua_State *L) {
 
 #endif
 
+lua_State *L = NULL;
+static double f(double x,double y)
+{
+	double z;
+	lua_getglobal(L,"foo");			//获取lua函数foo
+	lua_pushnumber(L,x);
+	lua_pushnumber(L,y);			//压入x,y
+	
+	if(lua_pcall(L,2,1,0) != 0){	//传入两个参数，1个返回值，调用函数后都会pop出栈
+									//调用返回后，结果会push进栈
+		fprintf(stderr, "%s:%s", __FILE__,lua_tostring(L, -1));
+		lua_pop(L, 1);/* pop error message from the stack */
+	}
+	
+	if(!lua_isnumber(L,-1)){
+		fprintf(stderr, "%s", lua_tostring(L, -1));
+		lua_pop(L, 1);/* pop error message from the stack */
+	}
+	
+	z = lua_tonumber(L,-1);	//从指定索引转换出一个lua_Number值
+	lua_pop(L,1);
+	return z;
+}
+
+/*
+	模拟一个Lua解释器
+*/
 int main(int argc,char **argv)
 {
-    char buff[256];
+   // char buff[256];
     int error;
-	lua_State *L =luaL_newstate();  /* opens Lua */
-
-    luaopen_base(L);         /* opens the basic library */
-    luaopen_table(L);        /* opens the table library */
-    luaopen_io(L);           /* opens the I/O library */
-    luaopen_string(L);       /* opens the string lib. */
-    luaopen_math(L);         /* opens the math lib. */
+	L =luaL_newstate();  /* opens Lua */
+	luaL_openlibs(L);		//调用该函数需要链接dl库，然后可以屏蔽以下各库
+    //luaopen_base(L);         /* opens the basic library */
+    //luaopen_table(L);        /* opens the table library */
+    //luaopen_io(L);           /* opens the I/O library */
+	//luaopen_string(L);       /* opens the string lib. */
+	//luaopen_math(L);         /* opens the math lib. */
 
 	printf("lua >");
 	fflush(NULL);
-    while (fgets(buff, sizeof(buff), stdin) != NULL) {
+	error = luaL_loadfile(L,"./lua/moudle.lua") || lua_pcall(L, 0, 0, 0);
+	if (error) {
+		fprintf(stderr, "%s", lua_tostring(L, -1));
+		lua_pop(L, 1);/* pop error message from the stack */
+	}
+	printf("%f\n",f(1.0,3.0));
+	
+	#if 0 
+	while (fgets(buff, sizeof(buff), stdin) != NULL) {
        error = luaL_loadbuffer(L, buff, strlen(buff),"line") || lua_pcall(L, 0, 0, 0);
        if (error) {
-           fprintf(stderr, "%s", lua_tostring(L, -1));
-           lua_pop(L, 1);/* pop error message from the stack */
-       }
-	   printf("lua >");
-	   fflush(NULL);
-    }
+			fprintf(stderr, "%s", lua_tostring(L, -1));
+			lua_pop(L, 1);/* pop error message from the stack */
+		}
+		printf("lua >");
+		fflush(NULL);
+	}
+	#endif
 	
-    lua_close(L);
-    return 0;
+	lua_close(L);
+	return 0;
 }
 

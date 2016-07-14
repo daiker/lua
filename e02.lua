@@ -1412,8 +1412,17 @@ print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 24 " .. "C API]")
 --]==]
 print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 25 " .. "扩展应用程序]")
 
-
-
+--在c中调用lua
+-- a = f("how",t.x,14)
+-- c代码中的步骤如下：
+-- lua_getglobal(L,"f");	//函数入栈
+-- lua_pushstring(L,"how");	//参数1入栈
+-- lua_getglobal(L,"t"); 	//表t入栈
+-- lua_getfield(L,-1,"x");	//参数2入栈
+-- lua_remove(L,-2);		//从栈中移出表t
+-- lua_pushinteger(L,14);	//参数3入栈
+-- lua_call(L,3,1);			//调用函数，参数和函数都会出栈
+-- lua_setglobal(L,"a");	//给a赋值，栈顶出栈
 
 
 
@@ -1426,6 +1435,7 @@ print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
 --]]
 print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 26 " .. "从Lua调用C]")
 
+--扩展Lua的含义就是，往Lua中注册新的C函数
 --Lua调用C函数时，也使用了一个与C语言调用Lua时相同的栈。
 
 

@@ -20,7 +20,8 @@ CC=$(CROSS_COMPILE)gcc
 
 #C_FLAGS += -Wall -g -O
 C_FLAGS += -Wall -g
-LD_FLAGS += -lpthread -lm
+LD_FLAGS += -lpthread -lm -ldl
+LUAC_FLAGS += -Wall -shared -fPIC 
 
 INCLUDE_PATH := -I ./inc 
 
@@ -31,6 +32,7 @@ SOURCES = $(wildcard *.c) $(wildcard src/*.c)
 HEADERS = $(wildcard *.h) $(wildcard inc/*.h)
 
 LUA_LIB = lib/liblua.a
+LUA_CLIB = lib/power.so
 
 OBJFILES = $(SOURCES:%.c=%.o)
 
@@ -42,7 +44,7 @@ daiker:	daiker_al
 
 daiker_al:	$(TARGET)
 
-$(TARGET):	$(OBJFILES) $(LUA_LIB)
+$(TARGET):	$(OBJFILES) $(LUA_LIB) $(LUA_CLIB) 
 	@echo Linking $@ from $^..
 	$(LINK.c) $(INCLUDE_PATH) -o $@ $^
 
@@ -57,5 +59,8 @@ $(XDC_LFILE) $(XDC_CFLAGS):	$(XDC_CFGFILE)
 	@echo
 	$(VERBOSE) XDCPATH="$(XDC_PATH)" $(CONFIGURO) -c $(MVTOOL_DIR) -o $(XDC_CFG) -t $(XDC_TARGET) -p $(XDC_PLATFORM) $(XDC_CFGFILE)
 
+$(LUA_CLIB) : clib/power.c 
+	$(CC) $(LUAC_FLAGS) $(INCLUDE_PATH) $^ -o $@ 
+	
 clean:
 	$(VERBOSE) -$(RM) -rf  $(OBJFILES) $(TARGET) *~ *.d .dep
