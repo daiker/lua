@@ -14,17 +14,12 @@ end
 --]]
 
 package.cpath = "lib/?.so"
+local power = require "power"
 
-
-local powe = require "power"
-
---print(square(1.5))
---print(cube(5))
-powe.cube(3)
-
-
-
-function foo(a,b,c)
+print(power.square(23))  --调用c函数
+print(power.cube(4))
+print(power.sin(2))
+function foo(a,b,c)		--被c函数调用
 	print(a,b,c)
 	a = a or 0
 	b = b or 0

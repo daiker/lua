@@ -121,7 +121,7 @@ static double f(double x,double y)
 	lua_getglobal(L,"foo");			//获取lua函数foo
 	lua_pushnumber(L,x);
 	lua_pushnumber(L,y);			//压入x,y
-	
+
 	if(lua_pcall(L,2,1,0) != 0){	//传入两个参数，1个返回值，调用函数后都会pop出栈
 									//调用返回后，结果会push进栈
 		fprintf(stderr, "%s:%s", __FILE__,lua_tostring(L, -1));
@@ -160,7 +160,7 @@ int main(int argc,char **argv)
 		fprintf(stderr, "%s", lua_tostring(L, -1));
 		lua_pop(L, 1);/* pop error message from the stack */
 	}
-	printf("%f\n",f(1.0,3.0));
+	printf("\n%f\n",f(1.0,3.0));
 	
 	#if 0 
 	while (fgets(buff, sizeof(buff), stdin) != NULL) {

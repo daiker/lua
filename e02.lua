@@ -1438,4 +1438,103 @@ print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 26 " .. "从Lua调用C]")
 --扩展Lua的含义就是，往Lua中注册新的C函数
 --Lua调用C函数时，也使用了一个与C语言调用Lua时相同的栈。
 
+--[[
+static int isquare(lua_State *L){
+	float ret = lua_tonumber(L,-1); //从栈中取出一个变量，这个变量是number类型的
+	//printf("Top of square(),nbr=%f\n",ret);
+	lua_pushnumber(L,ret*ret);		//把结果计算好后，将结果压回Lua栈
+	return 1;						//这个返回值告诉lua虚拟机，我们往栈里放入了多少个返回值
+}
+
+static int icube(lua_State *L){
+	float ret = lua_tonumber(L,-1); //从栈中取出一个变量，这个变量是number类型的
+	//printf("Top of cube(),nbr=%f\n",ret);
+	lua_pushnumber(L,ret*ret*ret);		//把结果计算好后，将结果压回Lua栈
+	return 1;						//这个返回值告诉lua虚拟机，我们往栈里放入了多少个返回值
+}
+
+static int isin(lua_State *L){
+	float d = luaL_checknumber(L,1); //检查函数的第一个参数是否是一个数字，并返回它
+	lua_pushnumber(L,sin(d));
+	return 1;
+}
+
+#if 0
+int luaopen_power(lua_State *L){
+	lua_register(	//把c函数isquare设到全局变量square中
+		L,			//Lua状态机
+		"square",	//Lua中的函数名
+		isquare		//当前文件中的函数名
+	);
+	lua_register(L,"cube",icube);
+	return 0;		//Lua5.1 的才会是这样返回
+}
+#endif
+
+int luaopen_power(lua_State *L){
+	luaL_Reg l[] = {
+		{ "square", isquare },
+		{ "cube", icube },
+		{ "sin", isin },
+		{ NULL, NULL },  //以此标识结尾
+	};
+	luaL_checkversion(L);
+	luaL_newlib(L,l);
+	return 1;			//这里必须要1，返回一个table.对于老版本的5.1就是0，没有返回任何值
+}
+--]]
+
+
+--[[
+	####################### chap27 编写C函数的技巧] ##########################################
+--]]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 27  编写C函数的技巧]")
+
+--lua_rawgeti(L,index,key)
+--lua_rawseti(L,index,key)  index表示table在栈中的位置，key标识元素在table中的位置
+--lua_rawget 类似于lua_gettable 但是作一次直接访问(不触发元方法)
+
+--当一个C函数从Lua收到一个字符串参数时，不要在访问字符串时从栈中弹出它，不要修改字符串
+--当C函数需要创建一个字符串返回给Lua时，C必须处理字符串的分配和释放,溢出等问题
+
+--调用split("hi,ho,there",","),会返回table{"hi","ho","there"},实现如下
+--[[
+static int i_split(lua_State *L){
+	const char *s = luaL_checkstring(L,1); //函数第一个参数
+	const char *sep = luaL_checkstring(L,2); //函数第二个参数
+	const char *e;
+	int i = 1;
+	lua_newtable(L);//创建一张空表，装结果
+	//遍历所有分隔符
+	while((e = strchr(s,*sep )) != NULL){
+		lua_pushlstring(L,s,e-s);//压入子串，把s指向的长度为e-s的串压入栈
+		lua_rawseti(L,-2,i++); //等价于t[i] = v 这里的t是-2处的表，空表，把-1处的值存入i中
+		s = e + 1;	//跳过分隔符
+	}
+	//压入最后一个字串
+	lua_pushstring(L,s);
+	lua_rawseti(L,-2,i);
+	return 1;	//返回table
+}
+--]]
+
+
+
+
+
+
+
+
+
+
+
+local bt = os.clock()
+print("run time : " .. bt .. " - " .. at .. " = " .. bt-at .. "s")
+--[[
+	####################### chap28 用户自定义类型] ##########################################
+--]]
+print("[日志 " .. os.date("%Y-%m-%d %X") .. " --chap 28  用户自定义类型]")
+
+
+
 

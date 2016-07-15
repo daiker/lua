@@ -18,8 +18,8 @@ CROSS_COMPILE=
 
 CC=$(CROSS_COMPILE)gcc
 
-#C_FLAGS += -Wall -g -O
-C_FLAGS += -Wall -g
+#C_FLAGS += -Wall -g -O -std=c99
+C_FLAGS += -Wall -g 
 LD_FLAGS += -lpthread -lm -ldl
 LUAC_FLAGS += -Wall -shared -fPIC 
 
