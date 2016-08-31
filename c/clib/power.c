@@ -27,18 +27,6 @@ static int isin(lua_State *L){
 	return 1;
 }
 
-#if 0
-int luaopen_power(lua_State *L){
-	lua_register(	//把c函数isquare设到全局变量square中
-		L,			//Lua状态机
-		"square",	//Lua中的函数名
-		isquare		//当前文件中的函数名
-	);
-	lua_register(L,"cube",icube);
-	return 0;		//Lua5.1 的才会是这样返回
-}
-#endif
-
 int luaopen_power(lua_State *L){
 	luaL_Reg l[] = {
 		{ "square", isquare },

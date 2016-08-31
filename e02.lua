@@ -1,4 +1,4 @@
-#! /home/scybzdk/git/skynet/3rd/lua/lua
+#! /home/scybzdk/git/skynet/skynet/3rd/lua/lua
 
 --[[
 	################# chap1 开始 ###################################################
